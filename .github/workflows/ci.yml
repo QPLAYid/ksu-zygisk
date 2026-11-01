@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: runs-on: ubuntu-24.04
 
     steps:
       # ====================================================================
@@ -62,8 +62,8 @@ jobs:
         if: success()
         id: prepare_artifacts
         run: |
-          RELEASE_ZIP=$(find module/build/outputs/release -type f -name 'NeoZygisk-v*-release.zip')
-          DEBUG_ZIP=$(find module/build/outputs/release -type f -name 'NeoZygisk-v*-debug.zip')
+          RELEASE_ZIP=$(find module/build/outputs/release -type f -name '*-release.zip')
+          DEBUG_ZIP=$(find module/build/outputs/release -type f -name '*-debug.zip')
 
           RELEASE_NAME=$(basename "$RELEASE_ZIP" .zip)
           DEBUG_NAME=$(basename "$DEBUG_ZIP" .zip)
