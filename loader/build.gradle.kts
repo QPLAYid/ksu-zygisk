@@ -53,6 +53,10 @@ android {
     }
 
     defaultConfig {
+        // Keep native ABIs in sync with the ABIs built for zygiskd (see zygiskd/build.gradle.kts)
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
         externalNativeBuild.cmake {
             cFlags("-std=c18", *defaultCFlags)
             cppFlags("-std=c++20", *defaultCFlags)
