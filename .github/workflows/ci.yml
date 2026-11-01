@@ -10,17 +10,14 @@ on:
 
 jobs:
   build:
-    runs-on: runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04
 
     steps:
-      # ====================================================================
-      # 1. SETUP ENVIRONMENT
-      # ====================================================================
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: "recursive"
-          fetch-depth: 0 # Needed for versioning from git history
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -36,64 +33,23 @@ jobs:
           rustup override set nightly
           rustup target add aarch64-linux-android
           rustup target add x86_64-linux-android
-          rustup target add i686-linux-android
-          rustup target add armv7-linux-androideabi
 
       - name: Setup Ccache for faster builds
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('**/build.gradle.kts', '**/gradle.properties') }}
 
-      - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: zygiskd/src -> ../build/intermediates/rust
-
-      # ====================================================================
-      # 2. CONFIGURE AND BUILD
-      # ====================================================================
       - name: Build with Gradle
-        run: ./gradlew zipRelease zipDebug -Porg.gradle.parallel=true -Porg.gradle.vfs.watch=true -Dorg.gradle.jvmargs=-Xmx2048m
+        run: ./gradlew zipRelease zipDebug -Porg.gradle.parallel=true -Dorg.gradle.jvmargs=-Xmx2048m
 
-      # ====================================================================
-      # 3. PREPARE AND UPLOAD ARTIFACTS
-      # ====================================================================
-      - name: Prepare build artifacts
-        if: success()
-        id: prepare_artifacts
-        run: |
-          RELEASE_ZIP=$(find module/build/outputs/release -type f -name '*-release.zip')
-          DEBUG_ZIP=$(find module/build/outputs/release -type f -name '*-debug.zip')
-
-          RELEASE_NAME=$(basename "$RELEASE_ZIP" .zip)
-          DEBUG_NAME=$(basename "$DEBUG_ZIP" .zip)
-
-          echo "RELEASE_NAME=${RELEASE_NAME}" >> $GITHUB_OUTPUT
-          echo "DEBUG_NAME=${DEBUG_NAME}" >> $GITHUB_OUTPUT
-
-          unzip "$RELEASE_ZIP" -d "release-artifact"
-          unzip "$DEBUG_ZIP" -d "debug-artifact"
-
-      - name: Upload Release Artifact
+      - name: Upload Release Zip
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.prepare_artifacts.outputs.RELEASE_NAME }}
-          path: release-artifact/
+          name: module-release
+          path: module/build/outputs/release/*-release.zip
 
-      - name: Upload Debug Artifact
+      - name: Upload Debug Zip
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.prepare_artifacts.outputs.DEBUG_NAME }}
-          path: debug-artifact/
-
-      - name: Upload Release Symbols
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-symbols
-          path: zygiskd/build/symbols/release/
-
-      - name: Upload Debug Symbols
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-symbols
-          path: zygiskd/build/symbols/debug/
+          name: module-debug
+          path: module/build/outputs/release/*-debug.zip
